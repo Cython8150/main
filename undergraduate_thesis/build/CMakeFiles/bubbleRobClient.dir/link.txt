@@ -1,0 +1,1 @@
+/usr/bin/c++   -pthread   CMakeFiles/bubbleRobClient.dir/bubbleRobClient.cpp.o  -o bubbleRobClient  libRemoteAPIClient.a /usr/lib/x86_64-linux-gnu/libzmq.so 

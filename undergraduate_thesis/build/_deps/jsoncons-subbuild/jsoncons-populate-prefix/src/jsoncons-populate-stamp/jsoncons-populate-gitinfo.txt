@@ -1,0 +1,3 @@
+repository='https://github.com/danielaparker/jsoncons'
+module=''
+tag='origin'

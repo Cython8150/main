@@ -1,0 +1,2 @@
+/usr/bin/ar qc libRemoteAPIClient.a  CMakeFiles/RemoteAPIClient.dir/RemoteAPIClient.cpp.o
+/usr/bin/ranlib libRemoteAPIClient.a
