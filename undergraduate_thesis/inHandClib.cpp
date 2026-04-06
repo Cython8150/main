@@ -90,13 +90,13 @@ int main() {
     
     // 2. 设置输入路径
     cout << "\n加载图片和ee_pose.txt..." << endl;
-    string image_folder = "/home/eric/undergraduate_thesis/build/image/hand_eye_new_1774432181";
+    string image_folder = "/home/eric/undergraduate_thesis/build/image/hand_eye_new_1775468827";
     string ee_pose_file = image_folder + "/ee_pose.txt";  // 由123.cpp保存
 
     // 棋盘格参数
     Size boardSize(11, 8);  // 内角点数量
     float square_size = 0.015f;  // 棋盘格方格尺寸 (米)
-    int num_images = 12;  // 图片数量
+    int num_images = 30;  // 图片数量
     
     // 准备3D世界坐标点
     vector<Point3f> world_corners;

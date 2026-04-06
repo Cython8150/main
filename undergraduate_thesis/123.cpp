@@ -121,9 +121,9 @@ void captureImageAsync() {
         try {
             cout << "\n开始拍照..." << endl;
             
-            //int ee_handle = g_sim->getObject("/UR5/link/joint/link/joint/link/joint/link/joint/link/joint/link");
-            int ee_handle = g_sim->getObject("/UR5/RG2/attachPoint");
-            int base_handle = g_sim->getObject("/UR5/link1_visible");  
+            int ee_handle = g_sim->getObject("/UR5/link7_visible");
+            //int ee_handle = g_sim->getObject("/UR5/RG2/attachPoint");
+            int base_handle = g_sim->getObject("/UR5");  
             vector<double> ee_pose = g_sim->getObjectPose(ee_handle, base_handle);
 
             // 获取末端位姿
