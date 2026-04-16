@@ -1,0 +1,80 @@
+Image 0:
+  File: image/hand_eye_new_1774424305/img_000.jpg
+  End-effector pose: -0.228643 0.057340 0.886192 0.435767 0.554349 -0.557474 -0.438209
+
+Image 1:
+  File: image/hand_eye_new_1774424305/img_001.jpg
+  End-effector pose: -0.113845 -0.016504 0.982391 0.498921 0.503269 -0.496747 -0.501040
+
+Image 2:
+  File: image/hand_eye_new_1774424305/img_002.jpg
+  End-effector pose: -0.335157 -0.005848 0.983305 0.477384 0.519424 -0.398932 -0.585795
+
+Image 3:
+  File: image/hand_eye_new_1774424305/img_003.jpg
+  End-effector pose: -0.209066 0.074381 0.744439 0.474007 0.518519 -0.566516 -0.430715
+
+Image 4:
+  File: image/hand_eye_new_1774424305/img_004.jpg
+  End-effector pose: -0.275627 0.097232 0.845150 0.492653 0.519141 -0.490722 -0.496969
+
+Image 5:
+  File: image/hand_eye_new_1774424305/img_005.jpg
+  End-effector pose: -0.277308 -0.045900 0.917336 0.594775 0.466703 -0.411536 -0.508987
+
+Image 6:
+  File: image/hand_eye_new_1774424305/img_006.jpg
+  End-effector pose: -0.238960 -0.103160 0.893752 0.602831 0.428203 -0.486073 -0.465801
+
+Image 7:
+  File: image/hand_eye_new_1774424305/img_007.jpg
+  End-effector pose: -0.373640 0.006159 0.912444 0.503651 0.553075 -0.459788 -0.478581
+
+Image 8:
+  File: image/hand_eye_new_1774424305/img_008.jpg
+  End-effector pose: -0.234160 0.083785 0.836638 0.502567 0.542144 -0.514132 -0.434942
+
+Image 9:
+  File: image/hand_eye_new_1774424305/img_009.jpg
+  End-effector pose: -0.228916 0.096938 0.932867 0.492436 0.479561 -0.549921 -0.474464
+
+Image 10:
+  File: image/hand_eye_new_1774424305/img_010.jpg
+  End-effector pose: -0.351959 -0.013629 0.890795 0.534251 0.552480 -0.423934 -0.479189
+
+Image 11:
+  File: image/hand_eye_new_1774424305/img_011.jpg
+  End-effector pose: -0.302652 -0.061285 0.981120 0.533278 0.461628 -0.410271 -0.578093
+
+Image 12:
+  File: image/hand_eye_new_1774424305/img_012.jpg
+  End-effector pose: -0.344776 0.067977 0.979170 0.466516 0.533104 -0.482193 -0.515415
+
+Image 13:
+  File: image/hand_eye_new_1774424305/img_013.jpg
+  End-effector pose: -0.225938 0.099174 0.914535 0.519095 0.560044 -0.493964 -0.415802
+
+Image 14:
+  File: image/hand_eye_new_1774424305/img_014.jpg
+  End-effector pose: -0.303435 0.103925 0.913531 0.473169 0.566948 -0.484529 -0.468949
+
+Image 15:
+  File: image/hand_eye_new_1774424305/img_015.jpg
+  End-effector pose: -0.208717 0.057214 0.904561 0.464053 0.626606 -0.519939 -0.348832
+
+Image 16:
+  File: image/hand_eye_new_1774424305/img_016.jpg
+  End-effector pose: -0.376377 0.032975 0.938413 0.435220 0.508325 -0.605581 -0.430652
+
+Image 17:
+  File: image/hand_eye_new_1774424305/img_017.jpg
+  End-effector pose: -0.456367 0.033096 0.920876 0.431276 0.519530 -0.558243 -0.482136
+
+Image 18:
+  File: image/hand_eye_new_1774424305/img_018.jpg
+  End-effector pose: -0.328367 0.016487 0.797766 0.472503 0.513117 -0.528986 -0.483349
+
+Image 19:
+  File: image/hand_eye_new_1774424305/img_019.jpg
+  End-effector pose: -0.288074 0.167130 0.892975 0.434208 0.627299 -0.476418 -0.437019
+

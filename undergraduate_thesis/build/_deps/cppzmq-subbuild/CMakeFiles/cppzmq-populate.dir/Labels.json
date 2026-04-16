@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/CMakeFiles/cppzmq-populate"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/CMakeFiles/cppzmq-populate.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/CMakeFiles/cppzmq-populate-complete.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/cppzmq-populate-prefix/src/cppzmq-populate-stamp/cppzmq-populate-install.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/cppzmq-populate-prefix/src/cppzmq-populate-stamp/cppzmq-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/cppzmq-populate-prefix/src/cppzmq-populate-stamp/cppzmq-populate-download.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/cppzmq-populate-prefix/src/cppzmq-populate-stamp/cppzmq-populate-update.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/cppzmq-populate-prefix/src/cppzmq-populate-stamp/cppzmq-populate-patch.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/cppzmq-populate-prefix/src/cppzmq-populate-stamp/cppzmq-populate-configure.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/cppzmq-populate-prefix/src/cppzmq-populate-stamp/cppzmq-populate-build.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/cppzmq-subbuild/cppzmq-populate-prefix/src/cppzmq-populate-stamp/cppzmq-populate-test.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"cppzmq-populate"
+		],
+		"name" : "cppzmq-populate"
+	}
+}

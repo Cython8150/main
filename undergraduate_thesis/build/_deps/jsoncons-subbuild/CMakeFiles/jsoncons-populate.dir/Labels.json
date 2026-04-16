@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/CMakeFiles/jsoncons-populate"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/CMakeFiles/jsoncons-populate.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/CMakeFiles/jsoncons-populate-complete.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/jsoncons-populate-prefix/src/jsoncons-populate-stamp/jsoncons-populate-install.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/jsoncons-populate-prefix/src/jsoncons-populate-stamp/jsoncons-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/jsoncons-populate-prefix/src/jsoncons-populate-stamp/jsoncons-populate-download.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/jsoncons-populate-prefix/src/jsoncons-populate-stamp/jsoncons-populate-update.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/jsoncons-populate-prefix/src/jsoncons-populate-stamp/jsoncons-populate-patch.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/jsoncons-populate-prefix/src/jsoncons-populate-stamp/jsoncons-populate-configure.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/jsoncons-populate-prefix/src/jsoncons-populate-stamp/jsoncons-populate-build.rule"
+		},
+		{
+			"file" : "/home/eric/undergraduate_thesis/build/_deps/jsoncons-subbuild/jsoncons-populate-prefix/src/jsoncons-populate-stamp/jsoncons-populate-test.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"jsoncons-populate"
+		],
+		"name" : "jsoncons-populate"
+	}
+}

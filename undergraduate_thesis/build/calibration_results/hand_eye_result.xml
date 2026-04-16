@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<T_cam2gripper type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>4</cols>
+  <dt>d</dt>
+  <data>
+    9.9984074112130661e-01 3.7811317723279092e-03 1.7441199400172091e-02
+    1.8851597209109273e-03 -3.6598927352040388e-03
+    9.9996895593416302e-01 -6.9779906209969716e-03
+    -1.6246894743374946e-01 -1.7467042656473693e-02
+    6.9130463950572039e-03 9.9982354053621714e-01
+    -3.1585588000581172e-02 0. 0. 0. 1.</data></T_cam2gripper>
+<R_cam2gripper type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    9.9984074112130661e-01 3.7811317723279092e-03 1.7441199400172091e-02
+    -3.6598927352040388e-03 9.9996895593416302e-01
+    -6.9779906209969716e-03 -1.7467042656473693e-02
+    6.9130463950572039e-03 9.9982354053621714e-01</data></R_cam2gripper>
+<t_cam2gripper type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>1</cols>
+  <dt>d</dt>
+  <data>
+    1.8851597209109273e-03 -1.6246894743374946e-01
+    -3.1585588000581172e-02</data></t_cam2gripper>
+<T_gripper2cam type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>4</cols>
+  <dt>d</dt>
+  <data>
+    9.9984074112130672e-01 -3.6598927352040384e-03
+    -1.7467042656473697e-02 -3.0311852258325988e-03
+    3.7811317723279092e-03 9.9996895593416302e-01 6.9130463950572039e-03
+    1.6267512833499537e-01 1.7441199400172091e-02
+    -6.9779906209969716e-03 9.9982354053621736e-01
+    3.0413428186669797e-02 0. 0. 0. 1.</data></T_gripper2cam>
+<num_images>20</num_images>
+<method>DANIILIDIS</method>
+<square_size>1.4999999664723873e-02</square_size>
+<board_width>11</board_width>
+<board_height>8</board_height>
+<avg_reprojection_rotation_error_deg>1.2020936495204305e+02</avg_reprojection_rotation_error_deg>
+<avg_reprojection_translation_error_mm>1.7528445564458288e+00</avg_reprojection_translation_error_mm>
+<max_reprojection_translation_error_mm>3.0866779041452039e+00</max_reprojection_translation_error_mm>
+<std_reprojection_translation_error_mm>7.8242097221490270e-01</std_reprojection_translation_error_mm>
+<method_TSAI_trans_error_mm>1.8223105216285138e+00</method_TSAI_trans_error_mm>
+<method_TSAI_rot_error_deg>1.2012770893791837e+02</method_TSAI_rot_error_deg>
+<method_PARK_trans_error_mm>1.8222647295662455e+00</method_PARK_trans_error_mm>
+<method_PARK_rot_error_deg>1.2012888423838311e+02</method_PARK_rot_error_deg>
+<method_HORAUD_trans_error_mm>1.8222437299779819e+00</method_HORAUD_trans_error_mm>
+<method_HORAUD_rot_error_deg>1.2012693339946631e+02</method_HORAUD_rot_error_deg>
+<method_ANDREFF_trans_error_mm>2.5071991420677966e+00</method_ANDREFF_trans_error_mm>
+<method_ANDREFF_rot_error_deg>1.2019307833661469e+02</method_ANDREFF_rot_error_deg>
+<method_DANIILIDIS_trans_error_mm>1.7528445564458288e+00</method_DANIILIDIS_trans_error_mm>
+<method_DANIILIDIS_rot_error_deg>1.2020936495204305e+02</method_DANIILIDIS_rot_error_deg>
+</opencv_storage>
