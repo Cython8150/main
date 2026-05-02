@@ -7,6 +7,7 @@
 #include <thread>
 #include <chrono>
 #include <cmath>
+#include <random>
 
 using namespace std;
 
@@ -37,6 +38,13 @@ constexpr double kMinTipZBase = -1.0e6;
  */
 constexpr double kHomeJointRad[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
+/** Cuboid 世界系位置：x、y 在区间内随机，z 固定（与 CoppeliaSim 世界系一致） */
+constexpr double kCuboidWorldXMin = 0.841;
+constexpr double kCuboidWorldXMax = 1.508;
+constexpr double kCuboidWorldYMin = -0.341;
+constexpr double kCuboidWorldYMax = -0.008;
+constexpr double kCuboidWorldZ = 0.725;
+
 bool validDetection(const cv::Point3f& p) {
     return !(p.x == -1.f && p.y == -1.f && p.z == -1.f) && std::isfinite(p.x) && std::isfinite(p.y) && std::isfinite(p.z);
 }
@@ -65,7 +73,29 @@ int main() {
     int baseHandle = sim.getObject("/UR5");
     int tipHandle = sim.getObject("/UR5/RG2/attachPoint");
     int objectHandle = sim.getObject("/Cuboid");
-    
+    if (objectHandle >= 0) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<double> dist_x(kCuboidWorldXMin, kCuboidWorldXMax);
+        std::uniform_real_distribution<double> dist_y(kCuboidWorldYMin, kCuboidWorldYMax);
+        const double wx = dist_x(gen);
+        const double wy = dist_y(gen);
+        constexpr int64_t kWorld = -1; // sim.handle_world
+        std::vector<double> cuboid_pose = sim.getObjectPose(objectHandle, kWorld);
+        if (cuboid_pose.size() >= 7) {
+            cuboid_pose[0] = wx;
+            cuboid_pose[1] = wy;
+            cuboid_pose[2] = kCuboidWorldZ;
+            sim.setObjectPose(objectHandle, cuboid_pose, kWorld);
+        } else {
+            sim.setObjectPose(objectHandle, {wx, wy, kCuboidWorldZ, 0.0, 0.0, 0.0, 1.0}, kWorld);
+        }
+        cout << "Cuboid world pose set: x=" << wx << " y=" << wy << " z=" << kCuboidWorldZ << endl;
+        for (int i = 0; i < 30; i++)
+            sim.step();
+    } else {
+        cerr << "警告: 未找到 /Cuboid，跳过位置设置\n";
+    }
 
     start_vision_thread_rgb(sim_vision_rgb, visionSensorHandle);
     start_vision_thread_depth(sim_vision_depth, visionSensorHandle);
