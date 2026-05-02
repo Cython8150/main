@@ -152,7 +152,7 @@ find_package(OpenCV COMPONENTS
     features2d
     videoio
 )
-add_executable(testGrab testGrab.cpp find_handle.cpp control.cpp visual_module.cpp)
+add_executable(testGrab testGrab.cpp find_handle.cpp control.cpp visual_module.cpp jacobian_cartesian_control.cpp)
 target_include_directories(testGrab PRIVATE ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(testGrab PRIVATE RemoteAPIClient ${OpenCV_LIBS})
 

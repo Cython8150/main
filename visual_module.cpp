@@ -154,7 +154,7 @@ cv::Point3f detectObject3D(cv::Mat image) {
     float cy = camera_matrix.at<double>(1, 2);
 
     // 深度用于反投影时 X、Y、Z 必须用同一 Z，否则点不在像素射线上；目标离主点越远误差越大。
-    const float depth_offset = 0.05f;  // 若需与标定/仿真深度定义对齐，三者同加
+    const float depth_offset = 0.025f;  // 若需与标定/仿真深度定义对齐，三者同加
     float Z = depth_val + depth_offset;
     float X = -(center_x - cx) * Z / fx;
     float Y = -(center_y - cy) * Z / fy;

@@ -1,0 +1,217 @@
+#include "find_handle.h"
+#include "control.h"
+#include "visual_module.h"
+#include "jacobian_cartesian_control.h"
+#include "algorithm"
+
+using namespace std;
+
+int main() {
+    // 创建客户端
+    RemoteAPIClient client;
+    
+    // 获取仿真对象
+    auto sim = client.getObject().sim();
+
+    // 开始仿真
+    sim.startSimulation();
+
+    // 设置步进模式，以便精确控制
+    sim.setStepping(true);
+    // 1. 获取 UR5 关节句柄
+    vector<int> ur5_joints(6);
+    ur5_joints = findUR5JointHandle(sim);
+
+    vector<int> rg2_joints(2);  //rg2机械爪的打开关节和关闭关节
+    rg2_joints = findRG2JointHandle(sim);
+
+    // 显示视觉传感器图像
+    cv::Mat image;
+    RemoteAPIClient client_vision_rgb;
+    RemoteAPIClient client_vision_depth;
+    auto sim_vision_rgb = client_vision_rgb.getObject().sim();
+    auto sim_vision_depth = client_vision_depth.getObject().sim();
+    //int visionSensorHandle = sim_vision_rgb.getObject("/UR5/RG2/visionSensor");
+    int visionSensorHandle = sim_vision_rgb.getObject("/visionSensor");
+    int baseHandle = sim.getObject("/UR5");
+    start_vision_thread_rgb(sim_vision_rgb, visionSensorHandle);
+    start_vision_thread_depth(sim_vision_depth, visionSensorHandle);
+
+    // 张开机械爪
+    rg2_control(sim, rg2_joints, 20, 0.05);
+
+    // 执行几步仿真
+    for (int i = 0; i < 50; i++) {
+        sim.step();
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+    
+    // 4. 先关节空间移到「桌面抓取」常用姿态，再视觉+PBVS。
+    // 纯位置 PBVS 不约束姿态，若从场景默认零位/任意姿态起步，阻尼最小二乘可能收敛到
+    // 另一支 IK（腕部翻转），表现为 RG2 朝上；预置位姿把解锁在「朝下」那一支。
+    vector<double> pick_positions = {0.0, -1.57, 1.57, 0.0, 0.0, 0.0};
+    ur5_control(sim, ur5_joints, pick_positions);
+    for (int i = 0; i < 180; i++) {
+        sim.step();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    
+    // 5. 先检测再运动（张开夹爪便于接近）
+    rg2_control(sim, rg2_joints, 20, 0.05);
+    for (int i = 0; i < 30; i++) {
+        sim.step();
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+
+    cv::Mat image_detect = get_share_rgb_picture();
+    vector<float> shared_depth_buffer = get_sha();
+    cv::Point3f center_point = detectObject3D(image_detect);
+    cout << "center point is " << center_point << endl;
+    const bool det_ok = !(center_point.x == -1.f && center_point.y == -1.f && center_point.z == -1.f);
+    center_point = point_cam2base(center_point);
+    cout << "center point in base is " << center_point << endl;
+
+    float grasp_cx = 0.f, grasp_cy = 0.f, grasp_cz = 0.f;
+    bool pbvs_ok = false;
+
+    // 数值雅可比 + 阻尼最小二乘：末端跟踪基座系目标点（不依赖本地 DH）
+    int tipHandle = sim.getObject("/UR5/RG2/attachPoint");
+    if (tipHandle != -1 && det_ok) {
+        grasp_cx = center_point.x;
+        grasp_cy = center_point.y;
+        grasp_cz = center_point.z;
+        pbvs_ok = true;
+        // 正上方接近：全程保持与物体相同的 XY，只在基座 Z 上分段下降（避免从侧面挤进物体）。
+        // 约定：若物体在负 Z 侧、+Z 为“更高”，则 dz_hover/dz_mid/dz_grasp 均为相对物体中心的正偏移（越高 dz 越大）。
+        // 速度：主要耗时在雅可比差分的关节到位；参数默认已偏快，此处仅微调末段
+        JacobianPbvsParams jp;
+
+        const float cx = center_point.x;
+        const float cy = center_point.y;
+        const float cz = center_point.z;
+
+        const float dz_hover = 0.16f;   // 正上方高悬停
+        const float dz_mid = 0.07f;    // 中间高度（略抬高，减小 2→末段 的垂降行程）
+        /* 视觉给的是物心；dz 过小则末端会压到物心以下，夹爪易从侧面/棱角楔入。末段保持明显在物心上方。 */
+        const float dz_align = 0.055f; // 末段前先对齐到略高（同 XY）
+        const float dz_grasp = 0.038f; // 闭合前末端高度：仍高于典型物心，再靠闭合夹爪；若仍碰，继续加大到 0.045~0.055
+
+        cout << "PBVS: 1/4 悬停于正上方 (Z += " << dz_hover << " m, XY 固定)\n";
+        moveTipPositionPbvsDls(sim, ur5_joints, tipHandle, baseHandle, cx, cy, cz + dz_hover, jp);
+        for (int i = 0; i < 18; i++)
+            sim.step();
+
+        cout << "PBVS: 2/4 沿 Z 下降 (Z += " << dz_mid << " m)\n";
+        moveTipPositionPbvsDls(sim, ur5_joints, tipHandle, baseHandle, cx, cy, cz + dz_mid, jp);
+        for (int i = 0; i < 18; i++)
+            sim.step();
+
+        // 末两程：小步、略增阻尼，避免大垂降时臂形“绕”过物体；张开夹爪减小与盒子的几何干涉
+        rg2_control(sim, rg2_joints, 20, 0.08);
+        for (int i = 0; i < 25; i++)
+            sim.step();
+
+        JacobianPbvsParams jp_crawl = jp;
+        jp_crawl.position_tol_m = 0.012;
+        jp_crawl.max_iterations = 130;
+        jp_crawl.max_joint_step_rad = 0.065;
+        jp_crawl.damping_lambda = 0.055;
+        jp_crawl.err_near_m = 0.028;
+        jp_crawl.gain_far_max = 1.35;
+        jp_crawl.fd_settle_max_steps = jp.fd_settle_max_steps + 4;
+
+        cout << "PBVS: 3/4 慢速垂降到对齐高度 (Z += " << dz_align << " m)\n";
+        moveTipPositionPbvsDls(sim, ur5_joints, tipHandle, baseHandle, cx, cy, cz + dz_align, jp_crawl);
+        for (int i = 0; i < 22; i++)
+            sim.step();
+
+        JacobianPbvsParams jp_final = jp_crawl;
+        jp_final.max_joint_step_rad = 0.055;
+        jp_final.damping_lambda = 0.06;
+        jp_final.gain_far_max = 1.2;
+
+        cout << "PBVS: 4/4 下降到抓取预备高度 (Z += " << dz_grasp << " m)\n";
+        moveTipPositionPbvsDls(sim, ur5_joints, tipHandle, baseHandle, cx, cy, cz + dz_grasp, jp_final);
+        for (int i = 0; i < 22; i++)
+            sim.step();
+    } else {
+        cerr << "跳过 PBVS：无效检测点或 attachPoint 句柄\n";
+    }
+
+    int point_fy = 511 - center_point.y;
+    cv::circle(image_detect, cv::Point(center_point.x, point_fy), 3, cv::Scalar(0, 255, 0), -1);
+    cv::circle(image_detect, cv::Point(center_point.x, center_point.y), 3, cv::Scalar(0, 255, 255), -1);
+    cv::imwrite("./1.jpg", image_detect);
+
+    int shapeHandle = sim.getObject("/Cuboid");
+    vector<double> objectPose = sim.getObjectPose(shapeHandle, visionSensorHandle);
+    for (int i = 0; i < 3; i++)
+        cout << objectPose[i] << " ";
+    cout << endl;
+    vector<double> objectPoseBase = sim.getObjectPose(shapeHandle, baseHandle);
+    for (int i = 0; i < 3; i++)
+        cout << objectPoseBase[i] << " ";
+    cout << endl;
+
+    // 抓取 → 略抬起（防擦桌面）→ 关节零位（夹爪保持闭合便于观察）
+    if (pbvs_ok && tipHandle != -1) {
+        // 闭爪时接触力会推臂；每步重新 set 6 轴目标角 = 当前角，抵消漂移（否则常见“一闭爪末端往上跑”）
+        std::vector<double> q_hold(6);
+        for (int j = 0; j < 6; j++)
+            q_hold[j] = sim.getJointPosition(ur5_joints[j]);
+        ur5_control(sim, ur5_joints, q_hold);
+        for (int i = 0; i < 20; i++)
+            sim.step();
+
+        cout << "闭合夹爪抓取（每步锁定 UR5 关节目标）\n";
+        rg2_control(sim, rg2_joints, 18, -0.04);
+        for (int i = 0; i < 100; i++) {
+            ur5_control(sim, ur5_joints, q_hold);
+            sim.step();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        for (int j = 0; j < 6; j++)
+            q_hold[j] = sim.getJointPosition(ur5_joints[j]);
+        ur5_control(sim, ur5_joints, q_hold);
+        for (int i = 0; i < 25; i++)
+            sim.step();
+
+        JacobianPbvsParams jp_lift;
+        jp_lift.max_joint_step_rad = 0.12;
+        jp_lift.damping_lambda = 0.045;
+        jp_lift.settle_max_steps = 48;
+        jp_lift.fd_settle_max_steps = 18;
+        const float dz_lift = 0.12f;
+        cout << "抓取后沿 Z 抬起 " << dz_lift << " m（同 XY）\n";
+        moveTipPositionPbvsDls(sim, ur5_joints, tipHandle, baseHandle, grasp_cx, grasp_cy, grasp_cz + dz_lift, jp_lift);
+        for (int i = 0; i < 40; i++)
+            sim.step();
+
+        cout << "回到关节零位（夹爪保持闭合，观察抓取效果）\n";
+        std::vector<double> home_positions(6, 0.0);
+        ur5_control(sim, ur5_joints, home_positions);
+        for (int i = 0; i < 140; i++) {
+            sim.step();
+            std::this_thread::sleep_for(std::chrono::milliseconds(8));
+        }
+    } else {
+        cout << "未执行抓取：PBVS 未运行\n";
+        std::vector<double> home_positions(6, 0.0);
+        ur5_control(sim, ur5_joints, home_positions);
+        rg2_control(sim, rg2_joints, 20, 0.05);
+        for (int i = 0; i < 80; i++)
+            sim.step();
+    }
+
+    cv::imwrite("./2_after_home.jpg", get_share_rgb_picture());
+    
+    // 8. 停止仿真
+    printf("Simulation completed!\n");
+    stop_vision_thread_rgb();   //停止仿真前，先终止视觉模块的线程
+    stop_vision_thread_depth();
+    sim.stopSimulation();
+    sim_vision_rgb.stopSimulation();
+    sim_vision_depth.stopSimulation();
+
+    return 0;
+}
