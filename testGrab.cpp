@@ -36,7 +36,7 @@ constexpr double kMinTipZBase = -1.0e6;
  * 重心偏一侧；抓取后负载增大，Bullet 下易出现明显下垂或往一侧「倒」。
  * 请改成你在场景里摆好的稳定姿态（可在仿真里读当前关节角再填这里）。
  */
-constexpr double kHomeJointRad[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+constexpr double kHomeJointRad[6] = {0.0, -1.57, 1.57, 0.0, 0.0, 0.0};
 
 /** Cuboid 世界系位置：x、y 在区间内随机，z 固定（与 CoppeliaSim 世界系一致） */
 constexpr double kCuboidWorldXMin = 0.841;
