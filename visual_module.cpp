@@ -88,24 +88,53 @@ cv::Mat loadHandEyeCalibration() {
     return T_cam2gripper;
 }
 
-cv::Point3f detectObject3D(cv::Mat image) {
+/**
+ * 视觉图来自 get_share_rgb_picture：线程里对 Coppelia 缓冲做了 BGR2RGB，但若底层已是 RGB 会误交换 R/B，
+ * 绿色通道在中间，两种顺序不变；红/蓝会整反。对红/蓝同时按「内存当作 RGB」与「当作 BGR」各做一次 inRange 再 OR。
+ * 黑背景 (0,0,0) 不会满足「主通道高」，与阈值无关。
+ */
+static void buildTargetCubeMaskRgb(const cv::Mat& img_bgr_or_rgb, int cube_color, cv::Mat& out_mask) {
+    constexpr int lo_main = 110;
+    constexpr int hi_other = 130;
+    if (cube_color == kTargetCubeRed) {
+        cv::Mat m_rgb, m_bgr;
+        /* 假定通道为 R,G,B */
+        cv::inRange(img_bgr_or_rgb, cv::Scalar(lo_main, 0, 0), cv::Scalar(255, hi_other, hi_other), m_rgb);
+        /* 假定通道为 B,G,R（Coppelia 原始 BGR）：R 在第三分量 */
+        cv::inRange(img_bgr_or_rgb, cv::Scalar(0, 0, lo_main), cv::Scalar(hi_other, hi_other, 255), m_bgr);
+        cv::bitwise_or(m_rgb, m_bgr, out_mask);
+    } else if (cube_color == kTargetCubeGreen) {
+        cv::inRange(img_bgr_or_rgb, cv::Scalar(0, lo_main, 0), cv::Scalar(hi_other, 255, hi_other), out_mask);
+    } else if (cube_color == kTargetCubeBlue) {
+        cv::Mat m_rgb, m_bgr;
+        cv::inRange(img_bgr_or_rgb, cv::Scalar(0, 0, lo_main), cv::Scalar(hi_other, hi_other, 255), m_rgb);
+        cv::inRange(img_bgr_or_rgb, cv::Scalar(lo_main, 0, 0), cv::Scalar(255, hi_other, hi_other), m_bgr);
+        cv::bitwise_or(m_rgb, m_bgr, out_mask);
+    } else {
+        cv::Mat mr, mg, mb;
+        buildTargetCubeMaskRgb(img_bgr_or_rgb, kTargetCubeRed, mr);
+        buildTargetCubeMaskRgb(img_bgr_or_rgb, kTargetCubeGreen, mg);
+        buildTargetCubeMaskRgb(img_bgr_or_rgb, kTargetCubeBlue, mb);
+        cv::bitwise_or(mr, mg, out_mask);
+        cv::bitwise_or(out_mask, mb, out_mask);
+    }
+}
+
+cv::Point3f detectObject3D(cv::Mat image, int cube_color) {
     cv::FileStorage fs_camera("./calibration_results/cameraParaments.xml", cv::FileStorage::READ);
     cv::Mat camera_matrix, dist_coeffs;
     fs_camera["intrinsic_matrix"] >> camera_matrix;
     fs_camera["distortion_matrix"] >> dist_coeffs;
     fs_camera.release();
 
-    cv::Mat hsv_image;
-    cv::cvtColor(image, hsv_image, cv::COLOR_BGR2HSV);
+    if (image.empty())
+        return cv::Point3f(-1, -1, -1);
 
-    cv::Scalar lower_hsv_green(47, 0, 0);
-    cv::Scalar upper_hsv_green(155, 255, 255);
-
-    cv::Mat hsv_mask;
-    cv::inRange(hsv_image, lower_hsv_green, upper_hsv_green, hsv_mask);
+    cv::Mat rgb_mask;
+    buildTargetCubeMaskRgb(image, cube_color, rgb_mask);
 
     cv::Mat color_green_mask;
-    cv::medianBlur(hsv_mask, color_green_mask, 5);
+    cv::medianBlur(rgb_mask, color_green_mask, 5);
 
     vector<vector<cv::Point>> contours;
     vector<cv::Vec4i> hierarchy;

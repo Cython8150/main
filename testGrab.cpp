@@ -4,6 +4,7 @@
 #include "jacobian_cartesian_control.h"
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 #include <thread>
 #include <chrono>
 #include <cmath>
@@ -48,6 +49,15 @@ constexpr double kCuboidWorldZ = 0.725;
 bool validDetection(const cv::Point3f& p) {
     return !(p.x == -1.f && p.y == -1.f && p.z == -1.f) && std::isfinite(p.x) && std::isfinite(p.y) && std::isfinite(p.z);
 }
+
+/** Coppelia setObjectColor：纯 (255,0,0) / (0,255,0) / (0,0,255)，与视觉 RGB 阈值一致 */
+std::vector<double> coppeliaRgbFromCubeColor(int cube_color) {
+    if (cube_color == kTargetCubeRed)
+        return {1.0, 0.0, 0.0};
+    if (cube_color == kTargetCubeGreen)
+        return {0.0, 1.0, 0.0};
+    return {0.0, 0.0, 1.0};
+}
 } // namespace
 
 int main() {
@@ -72,30 +82,44 @@ int main() {
     int visionSensorHandle = sim_vision_rgb.getObject("/visionSensor");
     int baseHandle = sim.getObject("/UR5");
     int tipHandle = sim.getObject("/UR5/RG2/attachPoint");
-    int objectHandle = sim.getObject("/Cuboid");
-    if (objectHandle >= 0) {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<double> dist_x(kCuboidWorldXMin, kCuboidWorldXMax);
-        std::uniform_real_distribution<double> dist_y(kCuboidWorldYMin, kCuboidWorldYMax);
-        const double wx = dist_x(gen);
-        const double wy = dist_y(gen);
-        constexpr int64_t kWorld = -1; // sim.handle_world
-        std::vector<double> cuboid_pose = sim.getObjectPose(objectHandle, kWorld);
-        if (cuboid_pose.size() >= 7) {
-            cuboid_pose[0] = wx;
-            cuboid_pose[1] = wy;
-            cuboid_pose[2] = kCuboidWorldZ;
-            sim.setObjectPose(objectHandle, cuboid_pose, kWorld);
-        } else {
-            sim.setObjectPose(objectHandle, {wx, wy, kCuboidWorldZ, 0.0, 0.0, 0.0, 1.0}, kWorld);
-        }
-        cout << "Cuboid world pose set: x=" << wx << " y=" << wy << " z=" << kCuboidWorldZ << endl;
-        for (int i = 0; i < 30; i++)
-            sim.step();
-    } else {
-        cerr << "警告: 未找到 /Cuboid，跳过位置设置\n";
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> dist_x(kCuboidWorldXMin, kCuboidWorldXMax);
+    std::uniform_real_distribution<double> dist_y(kCuboidWorldYMin, kCuboidWorldYMax);
+    std::uniform_int_distribution<int> dist_color(0, 2);
+    const int target_cube_color = dist_color(gen);
+    const double wx = dist_x(gen);
+    const double wy = dist_y(gen);
+    constexpr double kCubeEdge = 0.05;
+    constexpr int64_t kWorld = -1;
+
+    int64_t old_cuboid = -1;
+    try {
+        old_cuboid = sim.getObject("/Cuboid");
+    } catch (const std::runtime_error&) {
+        /* 场景里没有该路径时 Coppelia 远程 API 会抛错，不是返回 -1 */
     }
+    if (old_cuboid >= 0)
+        sim.removeObject(old_cuboid);
+
+    int64_t objectHandle = sim.createPrimitiveShape(sim.primitiveshape_cuboid, {kCubeEdge, kCubeEdge, kCubeEdge}, 0);
+    if (objectHandle < 0) {
+        cerr << "createPrimitiveShape 失败\n";
+        sim.stopSimulation();
+        return 1;
+    }
+    sim.setObjectParent(objectHandle, kWorld, true);
+    sim.setObjectPose(objectHandle, {wx, wy, kCuboidWorldZ, 0.0, 0.0, 0.0, 1.0}, kWorld);
+    const std::vector<double> rgb01 = coppeliaRgbFromCubeColor(target_cube_color);
+    sim.setObjectColor(objectHandle, 0, sim.colorcomponent_diffuse, rgb01);
+    sim.setObjectColor(objectHandle, 0, sim.colorcomponent_ambient, rgb01);
+    sim.setObjectInt32Param(objectHandle, sim.shapeintparam_static, 1);
+    sim.setObjectInt32Param(objectHandle, sim.shapeintparam_respondable, 1);
+
+    cout << "目标正方体: color=" << target_cube_color << " (0红1绿2蓝) pos_world " << wx << " " << wy << " " << kCuboidWorldZ << endl;
+    for (int i = 0; i < 30; i++)
+        sim.step();
 
     start_vision_thread_rgb(sim_vision_rgb, visionSensorHandle);
     start_vision_thread_depth(sim_vision_depth, visionSensorHandle);
@@ -108,7 +132,7 @@ int main() {
     }
 
     cv::Mat image_detect = get_share_rgb_picture();
-    cv::Point3f center_point = detectObject3D(image_detect);
+    cv::Point3f center_point = detectObject3D(image_detect, target_cube_color);
     cout << "center point (cam-aligned) " << center_point << endl;
     center_point = point_cam2base(center_point);
     cout << "center point in base (m) " << center_point << endl;
@@ -166,15 +190,14 @@ int main() {
     //                            jac_params);
     // }
 
-    int shapeHandle = sim.getObject("/Cuboid");
-    vector<double> objectPoseBase = sim.getObjectPose(shapeHandle, baseHandle);
+    vector<double> objectPoseBase = sim.getObjectPose(objectHandle, baseHandle);
     cout << "Cuboid in base (sim): ";
     for (int i = 0; i < 3 && i < static_cast<int>(objectPoseBase.size()); i++)
         cout << objectPoseBase[i] << " ";
     cout << endl;
 
     image_detect = get_share_rgb_picture();
-    center_point = detectObject3D(image_detect);
+    center_point = detectObject3D(image_detect, target_cube_color);
     cout << "after grasp, center point (cam) " << center_point << endl;
     center_point = point_cam2base(center_point);
     cout << "after grasp, center in base " << center_point << endl;

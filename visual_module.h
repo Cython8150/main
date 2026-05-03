@@ -26,7 +26,16 @@ cv::Mat get_share_rgb_picture();
 
 cv::Mat get_depth_picture(RemoteAPIObject::sim& sim, int visionSensorHandle);
 
-cv::Point3f detectObject3D(cv::Mat image);
+/** 目标块颜色，须与仿真中设置的纯色块一致：0=红 1=绿 2=蓝 */
+constexpr int kTargetCubeRed = 0;
+constexpr int kTargetCubeGreen = 1;
+constexpr int kTargetCubeBlue = 2;
+
+/**
+ * 从 RGB 图像中分割指定颜色的目标块并反投影 3D 点（与 get_share_rgb_picture 一致为 RGB）。
+ * @param cube_color kTargetCubeRed / kTargetCubeGreen / kTargetCubeBlue
+ */
+cv::Point3f detectObject3D(cv::Mat image, int cube_color = kTargetCubeGreen);
 
 /** 眼在手外：detectObject3D 的 3D 点（与仿真视觉系一致）-> UR5 基座系；内部会先转到 OpenCV 相机系再乘手眼矩阵 */
 cv::Point3f point_cam2base(const cv::Point3f& cam_point);
