@@ -37,14 +37,45 @@ constexpr double kMinTipZBase = -1.0e6;
  * 重心偏一侧；抓取后负载增大，Bullet 下易出现明显下垂或往一侧「倒」。
  * 请改成你在场景里摆好的稳定姿态（可在仿真里读当前关节角再填这里）。
  */
-constexpr double kHomeJointRad[6] = {0.0, -1.57, 1.57, 0.0, 0.0, 0.0};
+// constexpr double kHomeJointRad[6] = {0.0, -1.57, 1.57, 0.0, 0.0, 0.0};
+constexpr double kHomeJointRad[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 /** Cuboid 世界系位置：x、y 在区间内随机，z 固定（与 CoppeliaSim 世界系一致） */
-constexpr double kCuboidWorldXMin = 0.841;
-constexpr double kCuboidWorldXMax = 1.508;
-constexpr double kCuboidWorldYMin = -0.341;
-constexpr double kCuboidWorldYMax = -0.008;
+constexpr double kCuboidWorldXMin = 0.941;  // 0.841
+constexpr double kCuboidWorldXMax = 1.408;  // 1.508
+constexpr double kCuboidWorldYMin = -0.241; // -0.341
+constexpr double kCuboidWorldYMax = 0.008;  // -0.008
 constexpr double kCuboidWorldZ = 0.725;
+
+/** 与 target_cube_color 一致：红->plane[0]，绿->plane[1]，蓝->plane[2]；路径按场景树修改 */
+constexpr const char* kPlanePathRed = "/Plane[0]";
+constexpr const char* kPlanePathGreen = "/Plane[1]";
+constexpr const char* kPlanePathBlue = "/Plane[2]";
+/** 释放点相对 plane 位姿原点在基座系 +z 方向抬高 (m)，避免压在板面上 */
+constexpr double kReleaseAbovePlaneZ = 0.3;
+/** 再略抬高 z 目标，红/蓝 Plane 处纯竖直分量更难压到毫米级，与 position_tol 一起缓解「徘徊」 */
+constexpr double kReleaseZExtraSlack = 0.012;
+/** 先到达「最终释放高度」之上多少米，再竖直下降，减轻远伸时 PBVS 卡在奇异附近 */
+constexpr double kReleaseApproachExtraZ = 0.14;
+/** 释放专用：PBVS 的 ||e|| 阈值 (m)，略松可避免在部分构型下 z 差几毫米永远不判收敛 */
+constexpr double kReleasePositionTolM = 0.026;
+constexpr double kCubeEdgeM = 0.05;
+/** 解除父子并开动力学后立方体质量 (kg)，便于 Bullet 下落 */
+constexpr double kReleasedCubeMassKg = 0.08;
+/** 松爪后专门步进仿真，让物体下落 */
+constexpr int kFallSimSteps = 50;
+
+/** 回 home：插值段数与每段步数越大越稳、越慢（终点仍为 kHomeJointRad） */
+constexpr int kHomeBlendSegments = 24;
+constexpr int kHomeStepsPerSegment = 6;
+
+const char* planePathForCubeColor(int cube_color) {
+    if (cube_color == kTargetCubeRed)
+        return kPlanePathRed;
+    if (cube_color == kTargetCubeGreen)
+        return kPlanePathGreen;
+    return kPlanePathBlue;
+}
 
 bool validDetection(const cv::Point3f& p) {
     return !(p.x == -1.f && p.y == -1.f && p.z == -1.f) && std::isfinite(p.x) && std::isfinite(p.y) && std::isfinite(p.z);
@@ -91,7 +122,6 @@ int main() {
     const int target_cube_color = dist_color(gen);
     const double wx = dist_x(gen);
     const double wy = dist_y(gen);
-    constexpr double kCubeEdge = 0.05;
     constexpr int64_t kWorld = -1;
 
     int64_t old_cuboid = -1;
@@ -103,7 +133,8 @@ int main() {
     if (old_cuboid >= 0)
         sim.removeObject(old_cuboid);
 
-    int64_t objectHandle = sim.createPrimitiveShape(sim.primitiveshape_cuboid, {kCubeEdge, kCubeEdge, kCubeEdge}, 0);
+    int64_t objectHandle =
+        sim.createPrimitiveShape(sim.primitiveshape_cuboid, {kCubeEdgeM, kCubeEdgeM, kCubeEdgeM}, 0);
     if (objectHandle < 0) {
         cerr << "createPrimitiveShape 失败\n";
         sim.stopSimulation();
@@ -189,6 +220,7 @@ int main() {
     //     moveTipPositionPbvsDls(sim, ur5_joints, tipHandle, baseHandle, tipPose[0], tipPose[1], tipPose[2] + kLiftDeltaZ,
     //                            jac_params);
     // }
+    // 
 
     vector<double> objectPoseBase = sim.getObjectPose(objectHandle, baseHandle);
     cout << "Cuboid in base (sim): ";
@@ -204,13 +236,74 @@ int main() {
     cv::imwrite("./2.jpg", image_detect);
 
     /* 先张开夹爪可明显减小腕部负载力矩，回位更稳；若演示需一直夹住物体可注释本行 */
-    // rg2_control(sim, rg2_joints, 20, 0.05);
+    rg2_control(sim, rg2_joints, 20, 0.05);
     std::vector<double> home_positions(kHomeJointRad, kHomeJointRad + 6);
-    ur5_control(sim, ur5_joints, home_positions);
-
-    for (int i = 0; i < 50; i++) {
+    ur5_moveToJointTargetSmooth(sim, ur5_joints, home_positions, kHomeBlendSegments, kHomeStepsPerSegment);
+    for (int i = 0; i < 60; i++) {
         sim.step();
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        std::this_thread::sleep_for(std::chrono::milliseconds(12));
+    }
+
+    int64_t planeHandle = -1;
+    try {
+        planeHandle = sim.getObject(planePathForCubeColor(target_cube_color));
+    } catch (const std::runtime_error& e) {
+        cerr << "未找到释放用平面 " << planePathForCubeColor(target_cube_color) << " : " << e.what() << endl;
+    }
+    if (planeHandle >= 0) {
+        vector<double> planePoseBase = sim.getObjectPose(planeHandle, baseHandle);
+        if (planePoseBase.size() >= 3) {
+            const double rx = planePoseBase[0];
+            const double ry = planePoseBase[1];
+            const double rz = planePoseBase[2];
+            const double z_release = rz + kReleaseAbovePlaneZ + kReleaseZExtraSlack;
+            const double z_approach = z_release + kReleaseApproachExtraZ;
+
+            JacobianPbvsParams jac_release = jac_params;
+            jac_release.position_tol_m = kReleasePositionTolM;
+            jac_release.max_iterations = 280;
+            jac_release.damping_lambda = 0.075;
+            jac_release.max_joint_step_rad = 0.16;
+            jac_release.settle_tol_rad = 0.022;
+            jac_release.fd_settle_tol_rad = 0.03;
+            jac_release.err_near_m = 0.04;
+            jac_release.gain_far_max = 2.0;
+
+            cout << "PBVS: 释放 plane 中心上方(基座系) xy=(" << rx << "," << ry << ") 先 z=" << z_approach << " 再 z="
+                 << z_release << " (plane.z=" << rz << " tol_m=" << kReleasePositionTolM << ")\n";
+
+            bool ok1 = moveTipPositionPbvsDls(sim, ur5_joints, tipHandle, baseHandle, rx, ry, z_approach, jac_release);
+            if (!ok1)
+                cerr << "雅可比：释放接近点(高)失败\n";
+            for (int i = 0; i < 25; i++) {
+                sim.step();
+                std::this_thread::sleep_for(std::chrono::milliseconds(8));
+            }
+
+            bool ok2 = ok1 && moveTipPositionPbvsDls(sim, ur5_joints, tipHandle, baseHandle, rx, ry, z_release, jac_release);
+            if (!ok2)
+                cerr << "雅可比：释放最终点失败\n";
+
+            if (ok2) {
+                for (int i = 0; i < 35; i++) {
+                    sim.step();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                }
+                /* 1) 脱离 attachPoint（保持世界位姿） 2) 打开 Body dynamic 3) 设质量 4) 再松爪，让步进下落 */
+                sim.setObjectParent(objectHandle, kWorld, true);
+                sim.setObjectInt32Param(objectHandle, sim.shapeintparam_static, 0);
+                sim.setShapeMass(objectHandle, kReleasedCubeMassKg);
+                sim.resetDynamicObject(objectHandle);
+
+                rg2_control(sim, rg2_joints, 20, 0.05);
+                cout << "目标已脱离指尖并设为动力学体，仿真步进下落 " << kFallSimSteps << " 步\n";
+                for (int i = 0; i < kFallSimSteps; i++) {
+                    sim.step();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                }
+            }
+        } else
+            cerr << "getObjectPose(plane, base) 维数不足\n";
     }
 
     printf("Simulation completed!\n");
