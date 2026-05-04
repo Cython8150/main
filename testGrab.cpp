@@ -25,7 +25,7 @@ constexpr double kGraspOffsetZ = 0.0;
  * 相对「接近阶段完成后的实际末端 z」最多再下降多少 (m)，防止视觉 z 偏深把目标点到桌子底下。
  * 略大于指尖到物块顶面的几何距离即可，例如 0.04–0.07；过小可能够不着物体。
  */
-constexpr double kMaxDescendFromHover = 0.064;
+constexpr double kMaxDescendFromHover = 0.066;  //0.064
 /**
  * 基座系下末端 z 的安全下限 (m)；若工作台在 z=0 附近且 +z 向上，可改为 0.0 或 0.01。
  * 设为极小负数表示不启用（仅用语义清晰的哨兵值）。
@@ -43,8 +43,8 @@ constexpr double kHomeJointRad[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 /** Cuboid 世界系位置：x、y 在区间内随机，z 固定（与 CoppeliaSim 世界系一致） */
 constexpr double kCuboidWorldXMin = 0.941;  // 0.841
 constexpr double kCuboidWorldXMax = 1.408;  // 1.508
-constexpr double kCuboidWorldYMin = -0.441; // -0.341
-constexpr double kCuboidWorldYMax = -0.108;  // -0.008
+constexpr double kCuboidWorldYMin = -0.341; // -0.341
+constexpr double kCuboidWorldYMax = -0.01;  // -0.008
 constexpr double kCuboidWorldZ = 0.725;
 
 /** 与 target_cube_color 一致：红->plane[0]，绿->plane[1]，蓝->plane[2]；路径按场景树修改 */
@@ -68,6 +68,8 @@ constexpr int kFallSimSteps = 50;
 /** 回 home：插值段数与每段步数越大越稳、越慢（终点仍为 kHomeJointRad） */
 constexpr int kHomeBlendSegments = 24;
 constexpr int kHomeStepsPerSegment = 6;
+/** 回 home 前闭合夹爪命令发出后的仿真步数，便于指尖夹稳后再动臂 */
+constexpr int kGripperCloseSettleStepsBeforeHome = 30;
 
 const char* planePathForCubeColor(int cube_color) {
     if (cube_color == kTargetCubeRed)
@@ -215,7 +217,7 @@ int main() {
             cerr << "雅可比迭代：抓取点失败\n";
         }
 
-        rg2_control(sim, rg2_joints, 20, 0.05);
+        rg2_control(sim, rg2_joints, 20, -0.05);
         sim.setObjectParent(objectHandle, tipHandle, true);
 
         for (int i = 0; i < 40; i++) {
@@ -223,7 +225,7 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
         }
 
-        rg2_control(sim, rg2_joints, 0, 0.0);
+        // rg2_control(sim, rg2_joints, 0, 0.0);
         // vector<double> tipPose = sim.getObjectPose(tipHandle, baseHandle);
         // if (tipPose.size() >= 3) {
         //     cout << "PBVS: 抬起 delta_z=" << kLiftDeltaZ << endl;
@@ -245,8 +247,10 @@ int main() {
         cout << "after grasp, center in base " << center_point << endl;
         cv::imwrite("./2.jpg", image_detect);
 
-        /* 先张开夹爪可明显减小腕部负载力矩，回位更稳；若演示需一直夹住物体可注释本行 */
-        rg2_control(sim, rg2_joints, 20, 0.05);
+        /* 回 home 前先闭合夹爪，再平滑带动负载回零 */
+        rg2_control(sim, rg2_joints, 20, -0.05);
+        for (int i = 0; i < kGripperCloseSettleStepsBeforeHome; i++)
+            sim.step();
         ur5_moveToJointTargetSmooth(sim, ur5_joints, home_positions, kHomeBlendSegments, kHomeStepsPerSegment);
         for (int i = 0; i < 60; i++) {
             sim.step();
@@ -315,8 +319,10 @@ int main() {
                 cerr << "getObjectPose(plane, base) 维数不足\n";
         }
 
-        /* 本轮放置结束后：回 home、删除该 cuboid，下一轮再按原流程创建 */
-        rg2_control(sim, rg2_joints, 20, 0.05);
+        // /* 本轮放置结束后：先闭合夹爪再回 home；下一轮循环开头仍会张开 */
+        // rg2_control(sim, rg2_joints, 20, -0.05);
+        // for (int i = 0; i < kGripperCloseSettleStepsBeforeHome; i++)
+        //     sim.step();
         ur5_moveToJointTargetSmooth(sim, ur5_joints, home_positions, kHomeBlendSegments, kHomeStepsPerSegment);
         for (int i = 0; i < 60; i++) {
             sim.step();
