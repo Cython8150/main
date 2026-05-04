@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<configuration>eye_to_hand</configuration>
+<method>DANIILIDIS</method>
+<T_base_from_cam type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>4</cols>
+  <dt>d</dt>
+  <data>
+    -9.9999339309964375e-01 -2.1364998505443091e-03
+    -2.9409395523233564e-03 -4.8817091177688544e-02
+    -2.1301732664998174e-03 9.9999541418516946e-01
+    -2.1526659020597010e-03 7.7928536597018827e-01
+    2.9455252360971644e-03 -2.1463869687978346e-03
+    -9.9999335842997683e-01 9.2143462731154169e-01 0. 0. 0. 1.</data></T_base_from_cam>
+<R_base_from_cam type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    -9.9999339309964375e-01 -2.1364998505443091e-03
+    -2.9409395523233564e-03 -2.1301732664998174e-03
+    9.9999541418516946e-01 -2.1526659020597010e-03
+    2.9455252360971644e-03 -2.1463869687978346e-03
+    -9.9999335842997683e-01</data></R_base_from_cam>
+<t_base_from_cam type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>1</cols>
+  <dt>d</dt>
+  <data>
+    -4.8817091177688544e-02 7.7928536597018827e-01
+    9.2143462731154169e-01</data></t_base_from_cam>
+<T_cam_from_base type_id="opencv-matrix">
+  <rows>4</rows>
+  <cols>4</cols>
+  <dt>d</dt>
+  <data>
+    -9.9999339309964341e-01 -2.1301732664998178e-03
+    2.9455252360971631e-03 -4.9870864742627134e-02
+    -2.1364998505443086e-03 9.9999541418516968e-01
+    -2.1463869687978342e-03 -7.7740833474314452e-01
+    -2.9409395523233555e-03 -2.1526659020597010e-03
+    -9.9999335842997650e-01 9.2296248045996676e-01 0. 0. 0. 1.</data></T_cam_from_base>
+<num_poses>20</num_poses>
+<valid_image_indices_csv>"0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19"</valid_image_indices_csv>
+<avg_board_jitter_translation_mm>1.1982838475564921e+00</avg_board_jitter_translation_mm>
+<avg_board_jitter_rotation_deg>2.9710000971481132e-01</avg_board_jitter_rotation_deg>
+<board_width>11</board_width>
+<board_height>8</board_height>
+<square_size_m>1.4999999664723873e-02</square_size_m>
+</opencv_storage>

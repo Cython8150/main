@@ -1,0 +1,4 @@
+Image 0:
+  File: image/hand_eye_new_1774174374/img_000.jpg
+  End-effector pose: -0.634065 0.099890 1.000554 0.501095 0.501068 -0.498933 -0.498899
+
