@@ -33,7 +33,7 @@ constexpr double kMaxDescendFromHover = 0.066;  //0.064
 constexpr double kMinTipZBase = -1.0e6;
 
 /**
- * 回「家」关节角 (rad)。六关节全 0 在多数 CoppeliaSim UR5 里不是竖直稳定位，大臂往往外伸，
+ * 回home_positions关节角 (rad)。六关节全 0 在多数 CoppeliaSim UR5 里不是竖直稳定位，大臂往往外伸，
  * 重心偏一侧；抓取后负载增大，Bullet 下易出现明显下垂或往一侧「倒」。
  * 请改成你在场景里摆好的稳定姿态（可在仿真里读当前关节角再填这里）。
  */
